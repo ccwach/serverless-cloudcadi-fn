@@ -62,7 +62,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     # Fetching Log Analytics Credential
     try:
-        r = requests.post(endpoint + '/get/account/cloud')
+        r = requests.post(endpoint + '/get/account/cloud',data={
+            "cloudAccountId": cloudAccountId,
+            "key": key
+        })
         output = r.json()
 
         ENROLLMENT = output['enrollment']

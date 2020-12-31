@@ -38,24 +38,36 @@ def main(mytimer: func.TimerRequest) -> None:
     # cloudAccountId = '8f79e655-64ef-4983-9896-4d6437e4f0b8'
 
 
-    # # BackEnd Access Credential 
-    endpoint = os.environ["Endpoint"]
-    key = os.environ["Key"]
-
-    # # Account Setting
-    cloudAccountId = os.environ["CLOUD_ACCOUNT_ID"]
-
-    if not endpoint:
+    # BackEnd Access Credential 
+    try:
+        endpoint = os.environ["ENDPOINT"]
+    except KeyError:
+        logging.error('Missing ENDPOINT ENV')
         return func.HttpResponse("Missing ENDPOINT ENV", status_code=400)
-    if not key:
-        return func.HttpResponse("Missing Key ENV",status_code=400)
-    if not cloudAccountId:
-        return func.HttpResponse("Missing CLOUD_ACCOUNT_ID ENV",status_code=400)
 
     try:
+        key = os.environ["KEY"]
+    except KeyError:
+        logging.error('Missing KEY ENV')
+        return func.HttpResponse("Missing KEY ENV",status_code=400)
 
-        # Fetching Log Analytics Credential
-        r = requests.post(endpoint + '/get/account/cloud')
+
+    # Account Setting
+    try:
+        cloudAccountId = os.environ["CLOUD_ACCOUNT_ID"]
+    except KeyError:
+        logging.error('Missing CLOUD_ACCOUNT_ID ENV')
+        return func.HttpResponse("Missing CLOUD_ACCOUNT_ID ENV",status_code=400)
+    
+
+
+    # Fetching Log Analytics Credential
+    try:
+
+        r = requests.post(endpoint + '/get/account/cloud', data={
+            "cloudAccountId": cloudAccountId,
+            "key": key
+        })
         output = r.json()
 
         workspaceId = output["workspaceId"]
