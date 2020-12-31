@@ -1,77 +1,69 @@
 import azure.functions as func
 
-from datetime import date, timedelta
-import logging
+# Dependencies
 import os
 import requests
 import urllib3
 import json
 from functools import reduce
 import pandas as pd
+import logging
 
 
-"""
-Env : 
-    - Endpoint
-    - Key
-    - CLOUD_ACCOUNT_ID
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    logging.info('Starting Performance Test Function')
 
-"""
+    dateValue = req.params.get('date')
+    if not dateValue:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            pass
+        else:
+            dateValue = req_body.get('date')
 
-def main(mytimer: func.TimerRequest) -> None:
-    # Start
-
-    logging.info('Python Timer trigger function processed a request.')
-
-    # date = datetime.date.today()
-    dateValue = str(date.today()- timedelta(days= 2))
-
+    if dateValue:
+        logging.info(f"Getting LogAnalytics Data for {dateValue}")
+    else:
+        return func.HttpResponse(
+             "Please pass a date on the query string or in the request body",
+             status_code=400
+        )
+    
     # Date
     startDate = dateValue
     endDate = dateValue
 
-    """ 
-    Local Testing
-    """
-    # endpoint = 'http://localhost:5000'
-    # key = ''
-    # cloudAccountId = '8f79e655-64ef-4983-9896-4d6437e4f0b8'
-
-
-    # # BackEnd Access Credential 
-    endpoint = os.environ["Endpoint"]
-    key = os.environ["Key"]
-
-    # # Account Setting
-    cloudAccountId = os.environ["CLOUD_ACCOUNT_ID"]
-
-    if not endpoint:
-        return func.HttpResponse("Missing ENDPOINT ENV", status_code=400)
-    if not key:
-        return func.HttpResponse("Missing Key ENV",status_code=400)
-    if not cloudAccountId:
-        return func.HttpResponse("Missing CLOUD_ACCOUNT_ID ENV",status_code=400)
-
     try:
+        workspaceId = os.environ["WORKSPACE_ID"].split(",")
+        logging.info(f"Workspace:- {workspaceId} type:- {type(workspaceId)}")
 
-        # Fetching Log Analytics Credential
-        r = requests.post(endpoint + '/get/account/cloud')
-        output = r.json()
+    except KeyError:
+        logging.error('Missing WORKSPACE_ID ENV')
+        return func.HttpResponse("Missing WORKSPACE_ID ENV", status_code=400)
+    
+    try:
+        tenantId = os.environ["TENANT_ID"]
+    except KeyError:
+        logging.error('Missing TENANT_ID ENV')
+        return func.HttpResponse("Missing TENANT_ID ENV", status_code=400)
+    
+    try:
+        clientId = os.environ["CLIENT_ID"]
+    except KeyError:
+        logging.error('Missing CLIENTI_D ENV')
+        return func.HttpResponse("Missing CLIENT_ID ENV", status_code=400)
+    
+    try:
+        clientSecret = os.environ["CLIENT_SECRET"]
+    except KeyError:
+        logging.error('Missing CLIENT_SECRET ENV')
+        return func.HttpResponse("Missing CLIENT_SECRET ENV", status_code=400)
+    
+    
+    loginURL = "https://login.microsoftonline.com/" + tenantId + "/oauth2/token"
+    resource = "https://api.loganalytics.io"
 
-        workspaceId = output["workspaceId"]
-        tenantId = output["tenantId"]
-        clientId = output["clientId"]
-        clientSecret = output["clientSecret"]
-
-        loginURL = "https://login.microsoftonline.com/" + tenantId + "/oauth2/token"
-        resource = "https://api.loganalytics.io"
-        # url = "https://api.loganalytics.io/v1/workspaces/"+ workspaceId + '/query'
-
-    except Exception as err:
-        return func.HttpResponse(
-             f"Failed while getting cloud credential {err}",
-             status_code=500
-        )
 
     def get_token(url, resource, Username, Password):
         """Get authorization token"""
@@ -98,14 +90,18 @@ def main(mytimer: func.TimerRequest) -> None:
              status_code=500 )
     
     token = get_token(loginURL, resource, clientId, clientSecret)
+    # logging.info(f"Token{token}")
         
     def getLogAnalyticsData(query):
         Headers = token
         params = {"query": query}
         rowData = []
         for i in workspaceId:
-            url = "https://api.loganalytics.io/v1/workspaces/"+ i + '/query'
+            logging.info(f'Getting Workspace Data: {i}')
+            url = "https://api.loganalytics.io/v1/workspaces/"+ str(i) + '/query'
+            logging.info(f'url: {url}')
             result = requests.get(url, params=params, headers=Headers, verify=False)
+            logging.info(f'Result: {result.json()}')
             Table = result.json()['tables'][0]
             columnData =[ col['name'] for col in Table['columns'] ]
             rowData += result.json()['tables'][0]['rows']
@@ -346,30 +342,7 @@ def main(mytimer: func.TimerRequest) -> None:
     d = df_final.to_json(orient='records')
     josnData = json.loads(d)
 
-    # Dividing List by 1000 record per chuck
-    def divide_chunks(l, n):       
-        # looping till length l 
-        for i in range(0, len(l), n):  
-            yield l[i:i + n]
+    logging.info(f"Date length - {len(josnData)} Sample Data:- {josnData[0]}")
+    return func.HttpResponse(f"Performance Test Function Successfully")
+
     
-    jdata = list(divide_chunks(josnData, 1000)) 
-
-
-    for jd in jdata:
-
-        payload={
-        'cloud_account_id': cloudAccountId,
-        'data': jd
-        }
-
-        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-
-        r = requests.post(endpoint +"/temp/create/performance",json=payload, headers=headers)
-    
-
-
-
-    # print(r.text)
-
-    return func.HttpResponse(f" This HTTP Performance triggered function executed successfully.")
-
