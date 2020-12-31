@@ -1,6 +1,7 @@
 import azure.functions as func
 
 from datetime import date, timedelta
+import os
 import logging
 import requests
 import json
@@ -21,23 +22,30 @@ def main(mytimer: func.TimerRequest) -> None:
     # key = ''
     # cloudAccountId = '8f79e655-64ef-4983-9896-4d6437e4f0b8'
 
-    # BackEnd Access Credential
-    endpoint = os.environ["Endpoint"]
-    key = os.environ["Key"]
-
-    # Account Setting
-    cloudAccountId = os.environ["CLOUD_ACCOUNT_ID"]
-
-    if not endpoint:
+    # BackEnd Access Credential 
+    try:
+        endpoint = os.environ["ENDPOINT"]
+    except KeyError:
+        logging.error('Missing ENDPOINT ENV')
         return func.HttpResponse("Missing ENDPOINT ENV", status_code=400)
-    if not key:
-        return func.HttpResponse("Missing Key ENV",status_code=400)
-    if not cloudAccountId:
-        return func.HttpResponse("Missing CLOUD_ACCOUNT_ID ENV",status_code=400)
 
     try:
+        key = os.environ["KEY"]
+    except KeyError:
+        logging.error('Missing KEY ENV')
+        return func.HttpResponse("Missing KEY ENV",status_code=400)
 
-        # Fetching Log Analytics Credential
+
+    # Account Setting
+    try:
+        cloudAccountId = os.environ["CLOUD_ACCOUNT_ID"]
+    except KeyError:
+        logging.error('Missing CLOUD_ACCOUNT_ID ENV')
+        return func.HttpResponse("Missing CLOUD_ACCOUNT_ID ENV",status_code=400)
+    
+    
+    # Fetching Log Analytics Credential
+    try:
         r = requests.post(endpoint + '/get/account/cloud')
         output = r.json()
 
@@ -53,11 +61,16 @@ def main(mytimer: func.TimerRequest) -> None:
     logging.info('Starting Process - Getting Cost Data (Azure Consumption API)')
 
     url = 'https://consumption.azure.com/v3/enrollments/'+ ENROLLMENT +'/usagedetailsbycustomdate?startTime='+ STARTDATE +'&endTime='+ ENDDATE
+    headers = {'Accept':'application/json', 'Authorization': 'bearer '+ KEY}
     output = []
     count = 1
 
     while url != None:
         r = requests.get(url, headers=headers)
+        if r.status_code == 401:
+            logging.error(f"Authenication Failed:- {r.json()['error']}")
+            return func.HttpResponse(f"Authenication Failed:- {r.json()['error']}",status_code=401)
+                
         output += (r.json()['data'])
         url = r.json()['nextLink']
         logging.info('*************')

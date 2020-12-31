@@ -12,8 +12,8 @@ import logging
 
 """
 Env : 
-    - Endpoint
-    - Key
+    - ENDPOINT
+    - KEY
     - CLOUD_ACCOUNT_ID
 
 req : (http-trigger only)
@@ -315,10 +315,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             Storage_Linux_Data = getLogAnalyticsData(Storage_Linux_Query)
             
             Storage_Linux_Data.rename(columns={ 'TimeGenerated': "Date", 
-                            "MV": "Storage_MV(%)", 
-                            "AV": "Storage_AV(%)", 
-                            "P90": "Storage_P90(%)", 
-                            "P80": "Storage_P80(%)",
+                            "MV": "Storage_MV_Percentage", 
+                            "AV": "Storage_AV_Percentage", 
+                            "P90": "Storage_P90_Percentage", 
+                            "P80": "Storage_P80_Percentage",
                             'Computer': 'COMPUTER'
                             }, inplace=True)
             Storage_Linux_Data.drop(['CounterName', 'InstanceName'], axis=1, inplace=True)
@@ -348,16 +348,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
             return Storage_Windows_Data
         
-    #     LStorage = getLinuxMachineStorage()
-    #     WStorage = getWindowsMachineStorage()
-    #     print(LStorage)
-    #     print(WStorage)
+        LStorage = getLinuxMachineStorage()
+        WStorage = getWindowsMachineStorage()
         
-    #     Storage = LStorage.append(WStorage)
+        Storage = LStorage.append(WStorage)
         
         logging.info('Storages Data Collected')
 
-        return getWindowsMachineStorage()
+        return Storage
 
     
     CPU = getCPU()
