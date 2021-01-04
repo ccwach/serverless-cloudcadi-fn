@@ -103,9 +103,14 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     request_header = {'Content-Type': 'application/json', 'Accept':'application/json'}
 
+    payload = {
+        'cloud_account_id': cloudAccountId,
+        'data': json.loads(output.to_json(orient='records'))
+    }
+
     try:
         logging.info('Pushing Resource Data')
-        requests.post(endpoint + "/temp/create/resource",json=output, headers=request_header)
+        requests.post(endpoint + "/temp/create/resource",json=payload, headers=request_header)
     except Exception as err:
         func.HttpResponse(
              f"Failed to Push Resource Data {err}",
@@ -114,7 +119,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         logging.info('Pushing Cost Data')
-        requests.post(endpoint + "/azure/create/cost",json=output, headers=request_header)
+        requests.post(endpoint + "/azure/create/cost",json=payload, headers=request_header)
     except Exception as err:
         func.HttpResponse(
              f"Failed to Push Cost Data {err}",
