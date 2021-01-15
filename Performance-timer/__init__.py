@@ -355,6 +355,7 @@ def main(mytimer: func.TimerRequest) -> None:
     dfs = [CPU, Memory, Disk_Read, Disk_Write, Storage_Disk_Read, Storage_Disk_Write, Network_Received, Network_Sent, Storage ]
 
     df_final = reduce(lambda left,right: pd.merge(left,right,on=['COMPUTER', 'Date']), dfs)
+    df_final['COMPUTER'] = df_final['COMPUTER'].str.upper()
     d = df_final.to_json(orient='records')
     josnData = json.loads(d)
 

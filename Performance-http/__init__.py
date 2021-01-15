@@ -85,6 +85,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             "key": key
         })
         output = r.json()
+        logging.info(f"output->{output}")
 
         workspaceId = output["workspaceId"]
         tenantId = output["tenantId"]
@@ -135,6 +136,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         rowData = []
         for i in workspaceId:
             url = "https://api.loganalytics.io/v1/workspaces/"+ i + '/query'
+            logging.info(f"url->{url}")
             result = requests.get(url, params=params, headers=Headers, verify=False)
             Table = result.json()['tables'][0]
             columnData =[ col['name'] for col in Table['columns'] ]
@@ -373,6 +375,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     dfs = [CPU, Memory, Disk_Read, Disk_Write, Storage_Disk_Read, Storage_Disk_Write, Network_Received, Network_Sent, Storage ]
 
     df_final = reduce(lambda left,right: pd.merge(left,right,on=['COMPUTER', 'Date']), dfs)
+    df_final['COMPUTER'] = df_final['COMPUTER'].str.upper()
     d = df_final.to_json(orient='records')
     josnData = json.loads(d)
 
