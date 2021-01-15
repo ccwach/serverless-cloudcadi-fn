@@ -105,7 +105,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     payload = {
         'cloud_account_id': cloudAccountId,
-        'data': json.loads(output.to_json(orient='records'))
+        'data': output
     }
 
     try:

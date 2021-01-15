@@ -89,7 +89,7 @@ def main(mytimer: func.TimerRequest) -> None:
     
     payload = {
         'cloud_account_id': cloudAccountId,
-        'data': json.loads(output.to_json(orient='records'))
+        'data': output
     }
 
     try:
