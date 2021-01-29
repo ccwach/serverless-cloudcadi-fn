@@ -42,23 +42,19 @@ def main(mytimer: func.TimerRequest) -> None:
     try:
         endpoint = os.environ["ENDPOINT"]
     except KeyError:
-        logging.error('Missing ENDPOINT ENV')
-        return func.HttpResponse("Missing ENDPOINT ENV", status_code=400)
+        return logging.error('Missing ENDPOINT ENV')
 
     try:
         key = os.environ["KEY"]
     except KeyError:
-        logging.error('Missing KEY ENV')
-        return func.HttpResponse("Missing KEY ENV",status_code=400)
+        return logging.error('Missing KEY ENV')
 
 
     # Account Setting
     try:
         cloudAccountId = os.environ["CLOUD_ACCOUNT_ID"]
     except KeyError:
-        logging.error('Missing CLOUD_ACCOUNT_ID ENV')
-        return func.HttpResponse("Missing CLOUD_ACCOUNT_ID ENV",status_code=400)
-    
+        return logging.error('Missing CLOUD_ACCOUNT_ID ENV')
 
 
     # Fetching Log Analytics Credential
@@ -80,9 +76,8 @@ def main(mytimer: func.TimerRequest) -> None:
         # url = "https://api.loganalytics.io/v1/workspaces/"+ workspaceId + '/query'
 
     except Exception as err:
-        return func.HttpResponse(
-             f"Failed while getting cloud credential {err}",
-             status_code=500
+        return logging.error(
+             f"Failed while getting cloud credential {err}"
         )
 
     def get_token(url, resource, Username, Password):
@@ -104,10 +99,8 @@ def main(mytimer: func.TimerRequest) -> None:
             return { "Authorization": str("Bearer "+ ApiToken), 'Content-Type': 'application/json'}
         elif ApiReturn.status_code == 401:
             err = json.loads(ApiReturn.content)
-            logging.error(f"workspaceId - Failed. Due to {err['error']}. Error Description  {err['error_description']}")
+            return logging.error(f"workspaceId - Failed. Due to {err['error']}. Error Description  {err['error_description']}")
             
-            return func.HttpResponse(f"workspaceId - Failed. Due to {err['error']}. Error Description  {err['error_description']}",
-             status_code=500 )
     
     token = get_token(loginURL, resource, clientId, clientSecret)
         
@@ -384,5 +377,5 @@ def main(mytimer: func.TimerRequest) -> None:
 
     # print(r.text)
 
-    return func.HttpResponse(f" This HTTP Performance triggered function executed successfully.")
+    return logging.info(f" This Timer Performance triggered function executed successfully.")
 

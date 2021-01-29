@@ -26,22 +26,21 @@ def main(mytimer: func.TimerRequest) -> None:
     try:
         endpoint = os.environ["ENDPOINT"]
     except KeyError:
-        logging.error('Missing ENDPOINT ENV')
-        return func.HttpResponse("Missing ENDPOINT ENV", status_code=400)
+        return logging.error('Missing ENDPOINT ENV')
+        
 
     try:
         key = os.environ["KEY"]
     except KeyError:
-        logging.error('Missing KEY ENV')
-        return func.HttpResponse("Missing KEY ENV",status_code=400)
+        return logging.error('Missing KEY ENV')
+        
 
 
     # Account Setting
     try:
         cloudAccountId = os.environ["CLOUD_ACCOUNT_ID"]
     except KeyError:
-        logging.error('Missing CLOUD_ACCOUNT_ID ENV')
-        return func.HttpResponse("Missing CLOUD_ACCOUNT_ID ENV",status_code=400)
+        return logging.error('Missing CLOUD_ACCOUNT_ID ENV')
     
     
     # Fetching Log Analytics Credential
@@ -56,9 +55,8 @@ def main(mytimer: func.TimerRequest) -> None:
         KEY = output['key']
 
     except Exception as err:
-        return func.HttpResponse(
-             f"Failed while getting cloud credential {err}",
-             status_code=500
+        return logging.error(
+             f"Failed while getting cloud credential {err}"
         )
 
     logging.info('Starting Process - Getting Cost Data (Azure Consumption API)')
@@ -71,8 +69,7 @@ def main(mytimer: func.TimerRequest) -> None:
     while url != None:
         r = requests.get(url, headers=headers)
         if r.status_code == 401:
-            logging.error(f"Authenication Failed:- {r.json()['error']}")
-            return func.HttpResponse(f"Authenication Failed:- {r.json()['error']}",status_code=401)
+            return logging.error(f"Authenication Failed:- {r.json()['error']}")
                 
         output += (r.json()['data'])
         url = r.json()['nextLink']
@@ -96,20 +93,18 @@ def main(mytimer: func.TimerRequest) -> None:
         logging.info('Pushing Resource Data')
         requests.post(endpoint + "/temp/create/resource",json=payload, headers=request_header)
     except Exception as err:
-        func.HttpResponse(
-             f"Failed to Push Resource Data {err}",
-             status_code=500
+        logging.error(
+             f"Failed to Push Resource Data {err}"
         )
 
     try:
         logging.info('Pushing Cost Data')
         requests.post(endpoint + "/azure/create/cost",json=payload, headers=request_header)
     except Exception as err:
-        func.HttpResponse(
-             f"Failed to Push Cost Data {err}",
-             status_code=500
+        logging.error(
+             f"Failed to Push Cost Data {err}"
         )
 
-    return func.HttpResponse(f"Successfully Sent")
+    return logging.info(f"Successfully Sent")
 
 
