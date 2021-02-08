@@ -43,6 +43,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         logging.error('Missing TOKEN ENV')
         return func.HttpResponse("Missing TOKEN ENV", status_code=400)
 
+    # Subscription list
+    try:
+        subscriptionList = os.environ["SUBSCRIPTION_LIST"].split(",")
+    except KeyError:
+        return logging.error('Missing Subscription List ENV')
     
     logging.info('Starting Process - Getting Cost Data (Azure Consumption API)')
 
@@ -67,6 +72,11 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         count += 1
     
     logging.info('Ending Process - Getting Cost Data (Azure Consumption API)')
+    
+    # Filtering Subcription
+    costData = pd.DataFrame(output)
+    costData = costData[costData['subscriptionName'].isin(subscriptionList)]
+
     logging.info(f"Sample output :- {output[0]}")
 
     return func.HttpResponse(f"Cost Test Function Successfully")

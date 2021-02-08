@@ -5,7 +5,7 @@ import os
 import logging
 import requests
 import json
-
+import pandas as pd
 
 def main(mytimer: func.TimerRequest) -> None:
     # Start
@@ -34,7 +34,11 @@ def main(mytimer: func.TimerRequest) -> None:
     except KeyError:
         return logging.error('Missing KEY ENV')
         
-
+    # Subscription list
+    try:
+        subscriptionList = os.environ["SUBSCRIPTION_LIST"].split(",")
+    except KeyError:
+        return logging.error('Missing Subscription List ENV')
 
     # Account Setting
     try:
@@ -82,11 +86,15 @@ def main(mytimer: func.TimerRequest) -> None:
     
     logging.info('Ending Process - Getting Cost Data (Azure Consumption API)')
 
+    # Filtering Subcription
+    costData = pd.DataFrame(output)
+    costData = costData[costData['subscriptionName'].isin(subscriptionList)]
+
     request_header = {'Content-Type': 'application/json', 'Accept':'application/json'}
     
     payload = {
         'cloud_account_id': cloudAccountId,
-        'data': output
+        'data': json.loads(costData.to_json(orient='records'))
     }
 
     try:

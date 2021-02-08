@@ -4,7 +4,7 @@ import os
 import logging
 import requests
 import json
-
+import pandas as pd
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     # Start
@@ -50,6 +50,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     except KeyError:
         logging.error('Missing KEY ENV')
         return func.HttpResponse("Missing KEY ENV",status_code=400)
+
+    # Subscription list
+    try:
+        subscriptionList = os.environ["SUBSCRIPTION_LIST"].split(",")
+    except KeyError:
+        return logging.error('Missing Subscription List ENV')
 
 
     # Account Setting
@@ -101,11 +107,16 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     
     logging.info('Ending Process - Getting Cost Data (Azure Consumption API)')
 
+    # Filtering Subcription
+    costData = pd.DataFrame(output)
+    costData = costData[costData['subscriptionName'].isin(subscriptionList)]
+
+
     request_header = {'Content-Type': 'application/json', 'Accept':'application/json'}
 
     payload = {
         'cloud_account_id': cloudAccountId,
-        'data': output
+        'data': json.loads(costData.to_json(orient='records'))
     }
 
     try:
