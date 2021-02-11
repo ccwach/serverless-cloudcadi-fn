@@ -349,6 +349,7 @@ def main(mytimer: func.TimerRequest) -> None:
 
     df_final = reduce(lambda left,right: pd.merge(left,right,on=['COMPUTER', 'Date']), dfs)
     df_final['COMPUTER'] = df_final['COMPUTER'].str.upper()
+    df_final['Date'] = df_final['Date'].str[:10]
     d = df_final.to_json(orient='records')
     josnData = json.loads(d)
 
