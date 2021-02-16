@@ -354,6 +354,10 @@ def main(mytimer: func.TimerRequest) -> None:
     d = df_final.to_json(orient='records')
     josnData = json.loads(d)
 
+    # Clean up
+    del CPU, Memory, Disk_Read, Disk_Write, Storage_Disk_Read, Storage_Disk_Write, Network_Received, Network_Sent, Storage, dfs, df_final, d
+
+
     # Dividing List by 1000 record per chuck
     def divide_chunks(l, n):       
         # looping till length l 
@@ -376,8 +380,8 @@ def main(mytimer: func.TimerRequest) -> None:
     
 
 
-
-    # print(r.text)
+    # clean up
+    del josnData, payload
 
     return logging.info(f" This Timer Performance triggered function executed successfully.")
 

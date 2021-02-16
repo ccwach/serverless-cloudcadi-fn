@@ -346,6 +346,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     josnData = json.loads(d)
 
     logging.info(f"Date length - {len(josnData)} Sample Data:- {josnData[0]}")
+    
+    # Clean up
+    del CPU, Memory, Disk_Read, Disk_Write, Storage_Disk_Read, Storage_Disk_Write, Network_Received, Network_Sent, Storage, dfs, df_final, d
+
     return func.HttpResponse(f"Performance Test Function Successfully")
 
     

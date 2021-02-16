@@ -57,19 +57,25 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     count = 1
 
     while url != None:
-        r = requests.get(url, headers=headers)
-        if r.status_code == 401:
-            logging.error(f"Authenication Failed:- {r.json()['error']}")
-            return func.HttpResponse(f"Authenication Failed:- {r.json()['error']}",status_code=401)
-                
-        output += (r.json()['data'])
-        url = r.json()['nextLink']
-        logging.info('*************')
-        logging.info('count -'+ str(count))
-        logging.info(url)
-        logging.info(len(output))
-        logging.info('*************')
-        count += 1
+        try:
+            r = requests.get(url, headers=headers)
+            if r.status_code == 401:
+                logging.error(f"Authenication Failed:- {r.json()['error']}")
+                return func.HttpResponse(f"Authenication Failed:- {r.json()['error']}",status_code=401)
+                    
+            output += (r.json()['data'])
+            url = r.json()['nextLink']
+            logging.info('*************')
+            logging.info('count -'+ str(count))
+            logging.info(url)
+            logging.info(len(output))
+            logging.info('*************')
+            count += 1
+        except Exception as err:
+            return func.HttpResponse(
+                f"Failed while getting Cost Data from Azure Consumption API {err}",
+                status_code=500
+            )
     
     logging.info('Ending Process - Getting Cost Data (Azure Consumption API)')
     
@@ -78,5 +84,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     costData = costData[costData['subscriptionName'].isin(subscriptionList)]
 
     logging.info(f"Sample output :- {output[0]}")
+
+    # Cleanup 
+    del output, costData
 
     return func.HttpResponse(f"Cost Test Function Successfully")
